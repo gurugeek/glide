@@ -1,5 +1,10 @@
 import SwiftExpress
 import HTMLKit
+import MongoKitten
+import Meow
+
+let db = try MongoDatabase.synchronousConnect("mongodb://admin:password@localhost:27017/playground")
+let pokemonCollection = MeowDatabase(db).collection(for: Pokemon.self)
 
 let app = SwiftExpress()
 
@@ -32,6 +37,17 @@ app.get("/template") { _, response, _ in
 
 app.get("/static") { _, response, _ in
   response.render(StaticPage())
+}
+
+app.get("/create") { _, response, _ in
+  let pokemon = Pokemon(name: "Abra", type: "Psychic", HP: 255)
+
+  pokemonCollection.insert(pokemon).whenSuccess { _ in
+    response.render(
+      HelloTemplate(),
+      context: .init(name: "\(pokemon.name) was created successfully!", title: "Success")
+    )
+  }
 }
 
 app.listen(1337)
